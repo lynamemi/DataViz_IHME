@@ -1,0 +1,79 @@
+body {
+	font-family: sans-serif;
+}
+
+h2 {
+	font-size: 1.5em;
+}
+
+#bottomRow {
+	padding-bottom: 10px;
+}
+
+#legend {
+	font-weight: 600;
+	margin: 10px 10px 10px 0;
+	display: inline-block;
+	background-color: whitesmoke;
+	padding: 10px;
+	padding-right: 50px;
+	vertical-align: top;
+	height: 300px;
+}
+
+#legend h2 {
+	font-size: 1.5em;
+	padding-left: 40px;
+}
+
+#legend ul li.key {
+	list-style: none;
+	font-size: .9em;
+	padding: 5px;
+	margin: 5px 5px 5px 0;
+	height: 20px;
+	color: white;
+	width: 100px;
+	text-align: center;
+	line-height: 20px;
+}
+
+.ui-tooltip {
+	background-color: black;
+	width: 20%;
+	opacity: .8;
+	border: none;
+	color: white;
+}
+
+#ageReport, #genderReport {
+	font-size: .9em;
+	background-color: whitesmoke;
+	padding: 10px 50px 10px 50px;
+}
+
+#genderReport {
+	display: inline-block;
+	margin: 10px 10px 10px 0;
+	vertical-align: top;
+	height: 300px;
+}
+
+#countryLabel {
+	background-color: #FFB949;
+	text-align: center;
+	height: 100px;
+	color: white;
+	margin-top: 10px;
+}
+
+#countryLabel #country {
+	padding: 10px;
+	margin: 0;
+	font-size: 2em;
+}
+
+#countryLabel #clickNote {
+	margin: 0;
+	font-size: 1.2em;
+}

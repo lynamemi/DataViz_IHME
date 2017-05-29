@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Global Obesity Prevalence</title>
+	<script type="text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
+	<script type="text/javascript" src="http://d3js.org/topojson.v1.min.js"></script>
+	<script type="text/javascript" src="https://d3js.org/d3-format.v1.min.js"></script>
+	<script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+	<script type="text/javascript" src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+	<link rel="stylesheet" type="text/css" href="https://code.jquery.com/ui/1.10.4/themes/cupertino/jquery-ui.css"></link>
+	<link rel="stylesheet" type="text/css" href="style.css"></link>
+</head>
+<body>
+	<div id="ageReport">
+		<h2>Obesity+Overweight Prevalence By Age</h2>
+		<h2>2013</h2>
+	</div>
+	<div id="bottomRow">
+		<div id="legend">
+			<h2>Map Legend</h2>
+			<h2>2013</h2>
+		</div>
+		<div id="genderReport">
+			<h2>Obesity+Overweight Prevalence By Gender</h2>
+			<h2>2013</h2>
+		</div>
+	</div>
+	<div id="countryLabel"></div>	
+	<div id="map"></div>
+	<script type="text/javascript">
+		$( function() {
+			$( document ).tooltip({track: true});
+		} );
+
+		var w = 1600;
+		var h = 1200;
+		var projection = d3.geo.mercator()
+							.translate([w/2, h/2])
+							.scale([200]);
+		var path = d3.geo.path()
+						.projection(projection);
+		var mapSvg = d3.select("#map")
+						.append("svg")
+						.attr("width", w)
+						.attr("height", h);
+		var colorRange = ["rgb(12,247,143)","rgb(9,189,160)","rgb(0,136,153)","rgb(6,75,117)","rgb(4,30,76)"];
+		var color = d3.scale.linear()
+							.domain([16, 32, 48, 64, 80])
+							.range(colorRange);
+		var legendColors = d3.scale.quantize()
+    						.range(colorRange);	
+
+		d3.json("countries.json", function(countriesData) {
+			var countries = countriesData.features;
+
+			d3.csv("/IHME_GBD_2013_OBESITY_PREVALENCE_1990_2013_Y2014M10D08/IHME_GBD_2013_OBESITY_PREVALENCE_1990_2013_Y2014M10D08.csv", function(obesityData) {
+				var maleFemaleDataByCountry2013 = d3.nest()
+											.key(function(x) { return x.location_name } )
+											.key(function(x) { return x.sex } )
+											.key(function(x) { return x.metric } )
+											.rollup(function(y) { 
+												var meanSum = 0;
+												var totalCount = 0;
+												for (var i = 0; i < y.length; i++) {
+													if(y[i].year == "2013") {
+														meanSum += parseFloat(y[i].mean);
+														totalCount++;
+													}													
+												}
+												var percentCombinedMean = (meanSum/totalCount)*100
+												return percentCombinedMean.toFixed(2);
+											})
+											.map(obesityData);
+				var ageDataByCountry = d3.nest()
+											.key(function(x) { return x.location_name } )
+											.key(function(x) { return x.age_group } )
+											.key(function(x) { return x.metric } )
+											.rollup(function(y) { 
+												var meanSum = 0;
+												var totalCount = 0;
+												for (var i = 0; i < y.length; i++) {
+													if(y[i].year == "2013") {
+														meanSum += parseFloat(y[i].mean);
+														totalCount++;
+													}
+												}
+												var percentCombinedMean = (meanSum/totalCount)*100;	
+												return percentCombinedMean.toFixed(2);
+											})
+											.map(obesityData);
+				if(maleFemaleDataByCountry2013 && typeof maleFemaleDataByCountry2013 === "object"){
+					var countryKeys = Object.keys(maleFemaleDataByCountry2013);
+					countryKeys.forEach(function(key, i) {
+						countries.forEach(function(country, j) {
+							if (key === country.properties.sovereignt || key.includes(country.properties.sovereignt) || country.properties.sovereignt.includes(key)) {
+								country.properties.maleFemaleObesityStats = maleFemaleDataByCountry2013[key];
+								country.properties.ageObesityStats = ageDataByCountry[key];
+					        } else if (country.properties.sovereignt === "Ivory Coast" && key === "Cote d'Ivoire"){
+								country.properties.maleFemaleObesityStats = maleFemaleDataByCountry2013[key];
+								country.properties.ageObesityStats = ageDataByCountry[key];
+								showGenderReport(country);
+								showAgeReport(country);
+								showCountryLabel(country);
+					        }
+					    })
+					})
+				
+					mapSvg.selectAll("path")
+						.style("fill", function(d, i) {
+							var value = d.properties.maleFemaleObesityStats;
+							if (value && value.both && value.both.obese && value.both.overweight) {
+								var combinedOverweightObese = (parseFloat(value.both.obese) + parseFloat(value.both.overweight))/2;
+								return color(combinedOverweightObese);
+							} else {
+								return "none";
+							}
+						})
+
+					var legend = d3.select('#legend')
+					  .append('ul')
+					    .attr('class', 'list-inline')
+					    .text("Combined Obesity+Overweight Prevalence for All Populations by Country");
+
+					var keys = legend.selectAll('li.key')
+					    .data(legendColors.range());
+
+					keys.enter().append('li')
+					    .attr('class', 'key')
+					    .style('background-color', String)
+					    .text(function(d) {
+					        var r = legendColors.invertExtent(d);	
+					        var format = d3.format(".0%");
+				        	var text = "";
+					        var percent = $.each(r, function(index, range) {
+					        	text += format(range*.8);
+					        	if(index < r.length-1) {
+					        		text += " - ";
+					        	}
+					        })      
+					        return text;
+					    });
+				}
+			});
+
+			mapSvg.selectAll("path")
+				.data(countries).enter()
+				.append("path")
+				.style("fill", "none")
+				.style("stroke", "grey")
+				.style("stroke-width", "1px")
+				.attr("d", path)
+				.on("mouseenter", function(x) {
+					showToolTip(x, this);
+				})
+				.on("mouseleave", function(x) {
+					$(".ui-tooltip").remove();	
+				})
+				.on("click", function(x){
+					showGenderReport(x);
+					showAgeReport(x);
+					showCountryLabel(x);
+				});
+
+			function showToolTip (d, path) {
+				$(path).tooltip({ 
+					track: true,
+					items: path,
+					content: getToolTipText(d)
+				});
+			}
+
+			function getToolTipText(x) {
+				if(x.properties.maleFemaleObesityStats && typeof x.properties.maleFemaleObesityStats === "object") {
+					var bothCombined = parseFloat(x.properties.maleFemaleObesityStats.both.obese) + parseFloat(x.properties.maleFemaleObesityStats.both.overweight);
+					return x.properties.sovereignt + "<br/>Obesity+Overweight rate: " + (bothCombined/2).toFixed(2);
+				}
+				return x.properties.sovereignt;					
+			}
+
+			function showGenderReport(x) {
+				if(x.properties.maleFemaleObesityStats && typeof x.properties.maleFemaleObesityStats === "object") {
+					var bothCombined = (parseFloat(x.properties.maleFemaleObesityStats.both.obese) + parseFloat(x.properties.maleFemaleObesityStats.both.overweight))/2;
+					var femaleCombined = (parseFloat(x.properties.maleFemaleObesityStats.female.obese) + parseFloat(x.properties.maleFemaleObesityStats.female.overweight))/2;
+					var maleCombined = (parseFloat(x.properties.maleFemaleObesityStats.male.obese) + parseFloat(x.properties.maleFemaleObesityStats.male.overweight))/2;
+					var dataset = [{"name": "Both", "data": bothCombined}, {"name": "Female", "data": femaleCombined}, {"name": "Male", "data": maleCombined}];
+					var w = 300;
+					var h = 200;
+					var barPadding = 15;
+					if (d3.select("#genderReport").selectAll("svg")) {
+						d3.select("#genderReport").selectAll("svg").remove();
+					}
+					var chartSvg = d3.select("#genderReport")
+								.append("svg")
+								.attr("width", w)
+								.attr("height", h);
+					chartSvg.selectAll("rect")
+								.data(dataset)
+								.enter()
+								.append("rect")
+								.attr("x", 0)
+								.attr("y", 0)
+								.attr("width", w/dataset.length - barPadding)
+								.attr("height", function(d) {
+									return d.data*2;
+								})
+								.attr("x", function(d, i) {
+									return i * (w / dataset.length);
+								})
+								.attr("y", function(d) {
+									return h - (d.data*2);
+								})
+								.attr("fill", function(d, i) {
+									return color(d.data);
+								})
+					chartSvg.selectAll("text")
+								.data(dataset)
+								.enter()
+								.append("text")
+								.append('svg:tspan')
+								.text(function(d) {
+									return d.data.toFixed(0) + "%";
+								})
+								.attr("x", function(d, i) {
+									return i ? i * (w / dataset.length) + (barPadding*2) : (barPadding*2);
+
+								})
+								.attr("y", function(d) {
+									return h - (d.data*2) - barPadding;
+								})
+								.append('svg:tspan')
+								.text(function(d) {
+									return d.name;
+								})
+								.attr("x", function(d, i) {
+									return i ? i * (w / dataset.length + 15) : 25;
+								})
+								.attr("y", function(d) {
+									return h - 2;
+								})
+								.style("fill", "white")
+								.style("font-size", "1.2em")
+								.style("padding", "5px")
+				}
+			}
+			function showAgeReport(x) {
+				if(x.properties && x.properties.ageObesityStats && typeof x.properties.ageObesityStats === "object") {
+					var ageObj = x.properties.ageObesityStats
+					var ageKeys = Object.keys(ageObj);
+					var dataset = [];
+					for (var i = 0; i < ageKeys.length; i++) {
+						var obese = ageObj[ageKeys[i]].obese;
+						var overweight = ageObj[ageKeys[i]].overweight;
+						var combined = (parseFloat(obese) + parseFloat(overweight))/2;
+						var newAgeObj = {};
+						var name = ageKeys[i]
+						for (var j = 0; j < ageKeys[i].length; j++) {
+							if (ageKeys[i][j] === ",") {
+								name = ageKeys[i].slice(0, j);
+								break;
+							}
+						}
+						name = name.replace("to", "-").replace(" ", "").replace(" ", "");
+						newAgeObj["name"] = name
+						newAgeObj["data"] = combined;
+						dataset.push(newAgeObj);
+					}
+					var w = 1200;
+					var h = 300;
+					var barPadding = 30;
+					if (d3.select("#ageReport").selectAll("svg")) {
+						d3.select("#ageReport").selectAll("svg").remove();
+					}
+					var chartSvg2 = d3.select("#ageReport")
+								.append("svg")
+								.attr("width", w)
+								.attr("height", h);
+					chartSvg2.selectAll("rect")
+								.data(dataset)
+								.enter()
+								.append("rect")
+								.attr("x", 0)
+								.attr("y", 0)
+								.attr("width", w/dataset.length - barPadding)
+								.attr("height", function(d) {
+									return d.data*2;
+								})
+								.attr("x", function(d, i) {
+									return i * (w / dataset.length);
+								})
+								.attr("y", function(d) {
+									return h - (d.data*2) - barPadding;
+								})
+								.attr("fill", function(d, i) {
+									return color(d.data);
+								})
+					chartSvg2.selectAll("text")
+								.data(dataset)
+								.enter()
+								.append("text")
+								.append('svg:tspan')
+								.text(function(d) {
+									return d.data.toFixed(0) + "%";
+								})
+								.attr("x", function(d, i) {
+									return i * (w / dataset.length) + (barPadding/2);
+								})
+								.attr("y", function(d) {
+									return h - (d.data*2) - barPadding - 5;
+								})
+								.append('svg:tspan')
+								.text(function(d) {
+									return d.name;
+								})
+								.attr("x", function(d, i) {
+									return i * (w / dataset.length);
+								})
+								.attr("y", function(d) {
+									return h - 2;
+								})
+								.style("fill", "black")
+				}
+			}
+			function showCountryLabel(x) {
+				if(!$.isArray(x)) {
+					x = [x];
+				}
+				if (d3.select("#countryLabel").selectAll("p")) {
+					d3.select("#countryLabel").selectAll("p").remove();
+				}
+				d3.select("#countryLabel").selectAll("p")
+					.data(x)
+					.enter()
+					.append("p")
+					.attr("id", "country")
+					.text(function(d){
+						if(d && d.properties && d.properties.name) {
+							return d.properties.name;
+						}						
+					})
+				d3.select("#countryLabel")
+					.append("p")
+					.attr("id", "clickNote")
+					.text("Click a country to see its obesity/overweight prevalence.")
+			}
+		});
+	</script>
+</body>
+</html>

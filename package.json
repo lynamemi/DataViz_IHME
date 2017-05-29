@@ -1,0 +1,21 @@
+{
+  "name": "obesityd3",
+  "version": "1.0.0",
+  "main": "BarChart.js",
+  "dependencies": {
+    "d3": "^3.5.17",
+    "express": "^4.15.3",
+    "gdal": "^0.9.4",
+    "jsdom": "^10.1.0",
+    "ogr2ogr": "^1.0.1",
+    "topojson": "^3.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
