@@ -2,8 +2,8 @@
 <html>
 <head>
 	<title>Global Obesity Prevalence</title>
-	<script type="text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
-	<script type="text/javascript" src="http://d3js.org/topojson.v1.min.js"></script>
+	<script type="text/javascript" src="https://d3js.org/d3.v3.min.js"></script>
+	<script type="text/javascript" src="https://d3js.org/topojson.v1.min.js"></script>
 	<script type="text/javascript" src="https://d3js.org/d3-format.v1.min.js"></script>
 	<script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
 	<script type="text/javascript" src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
@@ -53,7 +53,7 @@
 		d3.json("countries.json", function(countriesData) {
 			var countries = countriesData.features;
 
-			d3.csv("/IHME_GBD_2013_OBESITY_PREVALENCE_1990_2013_Y2014M10D08/IHME_GBD_2013_OBESITY_PREVALENCE_1990_2013_Y2014M10D08.csv", function(obesityData) {
+			d3.csv("/IHME_GBD_2013_OBESITY_PREVALENCE_1990_2013_Y2014M10D08/IHME_2013_Trimmed.csv", function(obesityData) {
 				var maleFemaleDataByCountry2013 = d3.nest()
 											.key(function(x) { return x.location_name } )
 											.key(function(x) { return x.sex } )
